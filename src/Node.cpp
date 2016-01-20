@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Daniel Kirchner
+ * Copyright 2016 Daniel Kirchner
  *
  * This file is part of assimp2vf.
  *
@@ -70,19 +70,24 @@ struct Vertex {
 
 void Node::Load (const aiNode *node) {
     name = std::string (node->mName.data, node->mName.length);
-    if (node->mParent) parent = std::string (node->mParent->mName.data, node->mParent->mName.length);
+    for (auto &c : name) if (c == '.' || c == ' ') c = '_';
+    if (node->mParent) {
+        parent = std::string (node->mParent->mName.data, node->mParent->mName.length);
+        for (auto &c : parent) if (c == '.' || c == ' ') c = '_';
+    }
     node->mTransformation.Decompose (scaling, rotation, position);
 
     if (node->mNumMeshes > 0) {
         if (!name.compare (0, 12, "meloadCurve_")) {
-            type = Curve;
+            type = BezierCurve;
+        } else if (!name.compare (0, 16, "meloadCurveEndP_")) {
+            type = SplineCurve;
         } else {
             type = Mesh;
         }
     } else {
         type = Container;
     }
-
 
     if (type == Mesh) {
         std::map<Vertex, unsigned int> vertexmap;
@@ -116,7 +121,7 @@ void Node::Load (const aiNode *node) {
             {
                 std::stringstream stream;
                 stream << "SUBMESH" << meshid;
-                vfAddSet (vf, stream.str ().c_str (), 3, VF_UNSIGNED_SHORT, indices.size () / 3, indices.data (), VF_FLAGS_LZ4);
+                vfAddSet (vf, stream.str ().c_str (), 3, VF_UNSIGNED_SHORT, indices.size () / 3, indices.data (), 0);
             }
         }
 
@@ -128,7 +133,7 @@ void Node::Load (const aiNode *node) {
                 positions[i*3+1] = vertices[i].y;
                 positions[i*3+2] = vertices[i].z;
             }
-            vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, vertices.size (), positions.data (), VF_FLAGS_LZ4);
+            vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, vertices.size (), positions.data (), 0);
         }
         {
             std::vector<float> normals;
@@ -138,7 +143,7 @@ void Node::Load (const aiNode *node) {
                 normals[i * 3 + 1] = vertices[i].ny;
                 normals[i * 3 + 2] = vertices[i].nz;
             }
-            vfAddSet (vf, "NORMALS", 3, VF_FLOAT, vertices.size (), normals.data (), VF_FLAGS_LZ4);
+            vfAddSet (vf, "NORMALS", 3, VF_FLOAT, vertices.size (), normals.data (), 0);
         }
         {
             std::vector<float> texcoords;
@@ -147,9 +152,9 @@ void Node::Load (const aiNode *node) {
                 texcoords[i*2+0] = vertices[i].tx;
                 texcoords[i*2+1] = vertices[i].ty;
             }
-            vfAddSet (vf, "TEXCOORDS0", 2, VF_FLOAT, vertices.size (), texcoords.data (), VF_FLAGS_LZ4);
+            vfAddSet (vf, "TEXCOORDS0", 2, VF_FLOAT, vertices.size (), texcoords.data (), 0);
         }
-    } else if (type == Curve) {
+    } else if (type == SplineCurve || type == BezierCurve) {
         if (node->mNumMeshes != 1) throw std::runtime_error ("more than one mesh in curve");
         const aiMesh *mesh = scene->GetScene ()->mMeshes[node->mMeshes[0]];
         std::vector<float> positions;
@@ -159,6 +164,6 @@ void Node::Load (const aiNode *node) {
             positions[i * 3 + 1] = mesh->mVertices[i].y;
             positions[i * 3 + 2] = mesh->mVertices[i].z;
         }
-        vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, mesh->mNumVertices, positions.data (), VF_FLAGS_LZ4);
+        vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, mesh->mNumVertices, positions.data (), 0);
     }
 }
