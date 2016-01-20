@@ -33,6 +33,10 @@ public:
     ~Scene (void);
     void Load (const aiScene *scene);
     void Save (void);
+    void ListOutputs (void);
+    void ListMaterials (void);
+    void ListNodes (void);
+    void ListAnimationData (void);
     const aiScene *GetScene (void) const {
         return scene;
     }

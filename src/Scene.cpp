@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Daniel Kirchner
+ * Copyright 2016 Daniel Kirchner
  *
  * This file is part of assimp2vf.
  *
@@ -76,7 +76,7 @@ void SaveNodeAnim (aiNodeAnim *anim, const std::string &filename) {
             positions[i * 3 + 1] = anim->mPositionKeys[i].mValue.y;
             positions[i * 3 + 2] = anim->mPositionKeys[i].mValue.z;
         }
-        vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, anim->mNumPositionKeys, positions.data (), VF_FLAGS_LZ4);
+        vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, anim->mNumPositionKeys, positions.data (), 0);
     }
     {
         std::vector<float> scalings;
@@ -86,7 +86,7 @@ void SaveNodeAnim (aiNodeAnim *anim, const std::string &filename) {
             scalings[i * 3 + 1]= anim->mScalingKeys[i].mValue.y;
             scalings[i * 3 + 2]= anim->mScalingKeys[i].mValue.z;
         }
-        vfAddSet (vf, "SCALINGS", 3, VF_FLOAT, anim->mNumScalingKeys, scalings.data (), VF_FLAGS_LZ4);
+        vfAddSet (vf, "SCALINGS", 3, VF_FLOAT, anim->mNumScalingKeys, scalings.data (), 0);
     }
     {
         std::vector<float> rotations;
@@ -97,15 +97,39 @@ void SaveNodeAnim (aiNodeAnim *anim, const std::string &filename) {
             rotations[i * 4 + 2]= anim->mRotationKeys[i].mValue.z;
             rotations[i * 4 + 3]= anim->mRotationKeys[i].mValue.w;
         }
-        vfAddSet (vf, "ROTATIONS", 4, VF_FLOAT, anim->mNumRotationKeys, rotations.data (), VF_FLAGS_LZ4);
+        vfAddSet (vf, "ROTATIONS", 4, VF_FLOAT, anim->mNumRotationKeys, rotations.data (), 0);
     }
 
     vfSave (vf, filename.c_str ());
 }
 
-void Scene::Save (void) {
-    std::set<std::string> materialnames;
+void Scene::ListOutputs (void) {
+    for (auto &node : nodelist) {
+        if (vfGetFirstSet (node->GetVF ()) != nullptr) {
+            std::cout << node->GetName () << ".vf" << std::endl;
+        }
+    }
 
+    for (auto animid = 0; animid < scene->mNumAnimations; animid++) {
+        aiAnimation *anim = scene->mAnimations[animid];
+        std::string animname = std::string (anim->mName.data, anim->mName.length);
+        if (animname.empty ()) {
+            std::stringstream stream;
+            stream << "anim";
+            if (scene->mNumAnimations > 1) stream << animid;
+            animname = stream.str ();
+        }
+        for (auto channel = 0; channel < anim->mNumChannels; channel++) {
+            aiNodeAnim *nodeanim = anim->mChannels[channel];
+            std::string nodename = std::string (nodeanim->mNodeName.data, nodeanim->mNodeName.length);
+            std::string filename = nodename + "_" + animname + ".vf";
+            std::cout << filename << std::endl;
+        }
+    }
+
+}
+
+void Scene::ListMaterials (void) {
     std::cout << "materials = {" << std::endl;
     for (auto i = 0; i < scene->mNumMaterials; i++) {
         aiString aimatname;
@@ -115,38 +139,11 @@ void Scene::Save (void) {
             matname.erase (0, 9);
         std::cout << "  " << matname << " = Material {" << std::endl;
         std::cout << "  };" << std::endl;
-        materialnames.insert (matname);
     }
     std::cout << "};" << std::endl << std::endl;
+}
 
-    for (auto &node : nodelist) {
-        std::cout << "nodes." << node->GetName () << " = " << node->GetTypeName () <<" {" << std::endl;
-        if (!node->GetParent ().empty ()) {
-            std::cout << "  parent = nodes." << node->GetParent () << ";" << std::endl;
-        }
-        if (vfGetFirstSet (node->GetVF ()) != nullptr) {
-            std::cout << "  filename = \"" << node->GetName () << ".vf\";" << std::endl;
-            vfSave (node->GetVF (), (node->GetName () + ".vf").c_str ());
-        }
-        if (!node->GetMaterials ().empty ()) {
-            std::cout << "  materials = {" << std::endl;
-            for (auto &material : node->GetMaterials ()) {
-                aiString aimatname;
-                scene->mMaterials[material]->Get (AI_MATKEY_NAME, aimatname);
-                std::string matname (aimatname.data, aimatname.length);
-                if (!matname.compare (0, 9, "Material-"))
-                    matname.erase (0, 9);
-                std::cout << "    materials." << matname << std::endl;
-                materialnames.insert (matname);
-            }
-            std::cout << "  };" << std::endl;
-        }
-        std::cout << "  position = " << node->GetPosition () << ";" << std::endl;
-        std::cout << "  scaling = " << node->GetScaling () << ";" << std::endl;
-        std::cout << "  rotation = " << node->GetRotation () << ";" << std::endl;
-        std::cout << "};" << std::endl;
-    }
-
+void Scene::ListAnimationData (void) {
     for (auto animid = 0; animid < scene->mNumAnimations; animid++) {
         std::cout << std::endl;
         aiAnimation *anim = scene->mAnimations[animid];
@@ -157,14 +154,77 @@ void Scene::Save (void) {
             if (scene->mNumAnimations > 1) stream << animid;
             animname = stream.str ();
         }
-        std::cout << "animations." << animname << " = AnimationData {" << std::endl;
+        std::cout << "animationdata." << animname << " = AnimationData {" << std::endl;
         for (auto channel = 0; channel < anim->mNumChannels; channel++) {
             aiNodeAnim *nodeanim = anim->mChannels[channel];
             std::string nodename = std::string (nodeanim->mNodeName.data, nodeanim->mNodeName.length);
             std::string filename = nodename + "_" + animname + ".vf";
             std::cout << "  [nodes." << nodename << "] = \"" << filename << "\";" << std::endl;
-            SaveNodeAnim (nodeanim, filename);
         }
         std::cout << "};" << std::endl;
+    }
+
+}
+
+void Scene::ListNodes (void) {
+    for (auto &node : nodelist) {
+        if (!node->GetName ().compare ("unnamed")) continue;
+        std::cout << "nodes." << node->GetName () << " = " << node->GetTypeName () <<" {" << std::endl;
+        if (!node->GetParent ().empty ()) {
+            if (!node->GetParent ().compare ("unnamed")) {
+                std::cout << "  parent = arg.root;" << std::endl;
+            } else {
+                std::cout << "  parent = nodes." << node->GetParent () << ";" << std::endl;
+            }
+        }
+        if (vfGetFirstSet (node->GetVF ()) != nullptr) {
+            std::cout << "  filename = \"" << node->GetName () << ".vf\";" << std::endl;
+        }
+        if (!node->GetMaterials ().empty ()) {
+            std::cout << "  materials = {" << std::endl;
+            for (auto &material : node->GetMaterials ()) {
+                aiString aimatname;
+                scene->mMaterials[material]->Get (AI_MATKEY_NAME, aimatname);
+                std::string matname (aimatname.data, aimatname.length);
+                if (!matname.compare (0, 9, "Material-"))
+                    matname.erase (0, 9);
+                std::cout << "    materials." << matname << std::endl;
+            }
+            std::cout << "  };" << std::endl;
+        }
+        std::cout << "  position = " << node->GetPosition () << ";" << std::endl;
+        std::cout << "  scaling = " << node->GetScaling () << ";" << std::endl;
+        std::cout << "  rotation = " << node->GetRotation () << ";" << std::endl;
+        if (node->GetType() == Node::Mesh) {
+            std::cout << "  active = true;" << std::endl;
+            std::cout << "  uniforms = uniforms;" << std::endl;
+        }
+        std::cout << "};" << std::endl;
+    }
+
+}
+
+void Scene::Save (void) {
+    for (auto &node : nodelist) {
+        if (vfGetFirstSet (node->GetVF ()) != nullptr) {
+            vfSave (node->GetVF (), (node->GetName () + ".vf").c_str ());
+        }
+    }
+
+    for (auto animid = 0; animid < scene->mNumAnimations; animid++) {
+        aiAnimation *anim = scene->mAnimations[animid];
+        std::string animname = std::string (anim->mName.data, anim->mName.length);
+        if (animname.empty ()) {
+            std::stringstream stream;
+            stream << "anim";
+            if (scene->mNumAnimations > 1) stream << animid;
+            animname = stream.str ();
+        }
+        for (auto channel = 0; channel < anim->mNumChannels; channel++) {
+            aiNodeAnim *nodeanim = anim->mChannels[channel];
+            std::string nodename = std::string (nodeanim->mNodeName.data, nodeanim->mNodeName.length);
+            std::string filename = nodename + "_" + animname + ".vf";
+            SaveNodeAnim (nodeanim, filename);
+        }
     }
 }

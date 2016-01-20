@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Daniel Kirchner
+ * Copyright 2016 Daniel Kirchner
  *
  * This file is part of assimp2vf.
  *
@@ -55,7 +55,8 @@ public:
     enum Type {
         Container,
         Mesh,
-        Curve
+        SplineCurve,
+        BezierCurve
     };
     Type GetType (void) const {
         return type;
@@ -64,8 +65,10 @@ public:
         switch (type) {
             case Mesh:
                 return "Mesh";
-            case Curve:
-                return "Curve";
+            case SplineCurve:
+                return "SplineCurve";
+            case BezierCurve:
+                return "BezierCurve";
             case Container:
                 return "Container";
             default:
