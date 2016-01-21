@@ -21,6 +21,7 @@
 #define ASSIMP2VF_NODE_H
 
 #include <assimp/scene.h>
+#include <vector>
 #include <openvf/openvf.h>
 
 class Scene;
