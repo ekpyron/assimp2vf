@@ -70,10 +70,10 @@ struct Vertex {
 
 void Node::Load (const aiNode *node) {
     name = std::string (node->mName.data, node->mName.length);
-    for (auto &c : name) if (c == '.' || c == ' ') c = '_';
+    for (auto &c : name) if (c == '.' || c == ' ' || c == '-') c = '_';
     if (node->mParent) {
         parent = std::string (node->mParent->mName.data, node->mParent->mName.length);
-        for (auto &c : parent) if (c == '.' || c == ' ') c = '_';
+        for (auto &c : parent) if (c == '.' || c == ' ' || c == '-') c = '_';
     }
     node->mTransformation.Decompose (scaling, rotation, position);
 

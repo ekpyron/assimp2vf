@@ -193,7 +193,7 @@ void Scene::ListNodes (void) {
             std::cout << "  };" << std::endl;
         }
         std::cout << "  position = " << node->GetPosition () << ";" << std::endl;
-        std::cout << "  scaling = " << node->GetScaling () << ";" << std::endl;
+        std::cout << "  scale = " << node->GetScaling () << ";" << std::endl;
         std::cout << "  rotation = " << node->GetRotation () << ";" << std::endl;
         if (node->GetType() == Node::Mesh) {
             std::cout << "  active = true;" << std::endl;
