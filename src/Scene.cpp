@@ -161,6 +161,10 @@ void Scene::ListAnimationData (void) {
             std::string filename = nodename + "_" + animname + ".vf";
             std::cout << "  [nodes." << nodename << "] = \"" << filename << "\";" << std::endl;
         }
+        if (anim->mTicksPerSecond != 0) {
+            std::cout << "  fps = " << (anim->mChannels[0]->mNumPositionKeys - 1)
+                                       / (anim->mTicksPerSecond * anim->mDuration) << ";" << std::endl;
+        }
         std::cout << "};" << std::endl;
     }
 
