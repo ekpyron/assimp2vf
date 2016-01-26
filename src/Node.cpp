@@ -22,6 +22,7 @@
 #include <vector>
 #include <sstream>
 #include "Scene.h"
+#include <miniball/Seb.h>
 
 Node::Node (Scene *scene_) : scene (scene_), type (Container), vf (vfAlloc ()) {
 }
@@ -92,9 +93,11 @@ void Node::Load (const aiNode *node) {
     if (type == Mesh) {
         std::map<Vertex, unsigned int> vertexmap;
         std::vector<Vertex> vertices;
+        std::vector<float> bboxes;
 
         for (auto meshid = 0; meshid < node->mNumMeshes; meshid++) {
             std::vector<uint16_t> indices;
+            std::vector<Seb::Point<double>> sebpoints;
             const aiMesh *mesh = scene->GetScene ()->mMeshes[node->mMeshes[meshid]];
             materials.push_back (mesh->mMaterialIndex);
             for (auto faceid = 0; faceid < mesh->mNumFaces; faceid++) {
@@ -105,6 +108,10 @@ void Node::Load (const aiNode *node) {
                 for (auto i = 0; i < 3; i++) {
                     unsigned int index = face.mIndices[i];
                     Vertex v (mesh->mVertices[index], mesh->mNormals[index], mesh->mTextureCoords[0][index]);
+
+                    const double coords[] = { v.x, v.y, v.z };
+                    sebpoints.emplace_back (3, coords);
+
                     auto it = vertexmap.find (v);
                     if (it == vertexmap.end ()) {
                         index = vertices.size ();
@@ -122,6 +129,12 @@ void Node::Load (const aiNode *node) {
                 std::stringstream stream;
                 stream << "SUBMESH" << meshid;
                 vfAddSet (vf, stream.str ().c_str (), 3, VF_UNSIGNED_SHORT, indices.size () / 3, indices.data (), 0);
+
+                Seb::Smallest_enclosing_ball<double> miniball (3, sebpoints);
+                bboxes.push_back (*(miniball.center_begin () + 0));
+                bboxes.push_back (*(miniball.center_begin () + 1));
+                bboxes.push_back (*(miniball.center_begin () + 2));
+                bboxes.push_back (miniball.radius ());
             }
         }
 
@@ -154,6 +167,7 @@ void Node::Load (const aiNode *node) {
             }
             vfAddSet (vf, "TEXCOORDS0", 2, VF_FLOAT, vertices.size (), texcoords.data (), 0);
         }
+        vfAddSet (vf, "BSPHERES", 4, VF_FLOAT, bboxes.size () / 4, bboxes.data (), 0);
     } else if (type == SplineCurve || type == BezierCurve) {
         if (node->mNumMeshes != 1) throw std::runtime_error ("more than one mesh in curve");
         const aiMesh *mesh = scene->GetScene ()->mMeshes[node->mMeshes[0]];
