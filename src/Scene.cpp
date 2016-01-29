@@ -185,23 +185,35 @@ void Scene::ListNodes (void) {
             std::cout << "  filename = \"" << node->GetName () << ".vf\";" << std::endl;
         }
         if (!node->GetMaterials ().empty ()) {
-            std::cout << "  materials = {" << std::endl;
-            for (auto &material : node->GetMaterials ()) {
+            if (node->GetMaterials ().size () > 1) {
+                std::cout << "  submeshes = {" << std::endl;
+                for (auto &material : node->GetMaterials ()) {
+                    aiString aimatname;
+                    scene->mMaterials[material]->Get (AI_MATKEY_NAME, aimatname);
+                    std::string matname (aimatname.data, aimatname.length);
+                    if (!matname.compare (0, 9, "Material-"))
+                        matname.erase (0, 9);
+                    std::cout << "    {" << std::endl;
+                    std::cout << "      material = materials." << matname << ";" << std::endl;
+                    std::cout << "      uniforms = uniforms;" << std::endl;
+                    std::cout << "    };" << std::endl;
+                }
+                std::cout << "  };" << std::endl;
+            } else {
                 aiString aimatname;
-                scene->mMaterials[material]->Get (AI_MATKEY_NAME, aimatname);
+                scene->mMaterials[node->GetMaterials ()[0]]->Get (AI_MATKEY_NAME, aimatname);
                 std::string matname (aimatname.data, aimatname.length);
                 if (!matname.compare (0, 9, "Material-"))
                     matname.erase (0, 9);
-                std::cout << "    materials." << matname << std::endl;
+                std::cout << "  material = materials." << matname << ";" << std::endl;
+                std::cout << "  uniforms = uniforms;" << std::endl;
             }
-            std::cout << "  };" << std::endl;
         }
         std::cout << "  position = " << node->GetPosition () << ";" << std::endl;
         std::cout << "  scale = " << node->GetScaling () << ";" << std::endl;
         std::cout << "  rotation = " << node->GetRotation () << ";" << std::endl;
         if (node->GetType() == Node::Mesh) {
             std::cout << "  active = true;" << std::endl;
-            std::cout << "  uniforms = uniforms;" << std::endl;
         }
         std::cout << "};" << std::endl;
     }
