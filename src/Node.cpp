@@ -22,6 +22,7 @@
 #include <vector>
 #include <sstream>
 #include "Scene.h"
+#include "Arguments.h"
 #include <miniball/Seb.h>
 
 Node::Node (Scene *scene_) : scene (scene_), type (Container), vf (vfAlloc ()) {
@@ -131,10 +132,10 @@ void Node::Load (const aiNode *node) {
                 vfAddSet (vf, stream.str ().c_str (), 3, VF_UNSIGNED_SHORT, indices.size () / 3, indices.data (), 0);
 
                 Seb::Smallest_enclosing_ball<double> miniball (3, sebpoints);
-                bboxes.push_back (*(miniball.center_begin () + 0));
-                bboxes.push_back (*(miniball.center_begin () + 1));
-                bboxes.push_back (*(miniball.center_begin () + 2));
-                bboxes.push_back (miniball.radius ());
+                bboxes.push_back (Arguments::get ().scale () * *(miniball.center_begin () + 0));
+                bboxes.push_back (Arguments::get ().scale () * *(miniball.center_begin () + 1));
+                bboxes.push_back (Arguments::get ().scale () * *(miniball.center_begin () + 2));
+                bboxes.push_back (Arguments::get ().scale () * miniball.radius ());
             }
         }
 
@@ -142,9 +143,9 @@ void Node::Load (const aiNode *node) {
             std::vector<float> positions;
             positions.resize (vertices.size () * 3);
             for (auto i = 0; i < vertices.size (); i++) {
-                positions[i*3+0] = vertices[i].x;
-                positions[i*3+1] = vertices[i].y;
-                positions[i*3+2] = vertices[i].z;
+                positions[i*3+0] = Arguments::get ().scale () * vertices[i].x;
+                positions[i*3+1] = Arguments::get ().scale () * vertices[i].y;
+                positions[i*3+2] = Arguments::get ().scale () * vertices[i].z;
             }
             vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, vertices.size (), positions.data (), 0);
         }
@@ -174,9 +175,9 @@ void Node::Load (const aiNode *node) {
         std::vector<float> positions;
         positions.resize (mesh->mNumVertices * 3);
         for (auto i = 0; i < mesh->mNumVertices; i++) {
-            positions[i * 3 + 0] = mesh->mVertices[i].x;
-            positions[i * 3 + 1] = mesh->mVertices[i].y;
-            positions[i * 3 + 2] = mesh->mVertices[i].z;
+            positions[i * 3 + 0] = Arguments::get ().scale () * mesh->mVertices[i].x;
+            positions[i * 3 + 1] = Arguments::get ().scale () * mesh->mVertices[i].y;
+            positions[i * 3 + 2] = Arguments::get ().scale () * mesh->mVertices[i].z;
         }
         vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, mesh->mNumVertices, positions.data (), 0);
     }

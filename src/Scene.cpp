@@ -19,6 +19,7 @@
 
 #include "Scene.h"
 #include "Node.h"
+#include "Arguments.h"
 #include <queue>
 #include <iostream>
 #include <fstream>
@@ -72,9 +73,9 @@ void SaveNodeAnim (aiNodeAnim *anim, const std::string &filename) {
         std::vector<float> positions;
         positions.resize (anim->mNumPositionKeys * 3);
         for (auto i = 0; i < anim->mNumPositionKeys; i++) {
-            positions[i * 3 + 0] = anim->mPositionKeys[i].mValue.x;
-            positions[i * 3 + 1] = anim->mPositionKeys[i].mValue.y;
-            positions[i * 3 + 2] = anim->mPositionKeys[i].mValue.z;
+            positions[i * 3 + 0] = Arguments::get ().scale () * anim->mPositionKeys[i].mValue.x;
+            positions[i * 3 + 1] = Arguments::get ().scale () * anim->mPositionKeys[i].mValue.y;
+            positions[i * 3 + 2] = Arguments::get ().scale () * anim->mPositionKeys[i].mValue.z;
         }
         vfAddSet (vf, "POSITIONS", 3, VF_FLOAT, anim->mNumPositionKeys, positions.data (), 0);
     }
@@ -209,7 +210,7 @@ void Scene::ListNodes (void) {
                 std::cout << "  uniforms = uniforms;" << std::endl;
             }
         }
-        std::cout << "  position = " << node->GetPosition () << ";" << std::endl;
+        std::cout << "  position = " << (Arguments::get ().scale () * node->GetPosition ()) << ";" << std::endl;
         std::cout << "  scale = " << node->GetScaling () << ";" << std::endl;
         std::cout << "  rotation = " << node->GetRotation () << ";" << std::endl;
         if (node->GetType() == Node::Mesh) {

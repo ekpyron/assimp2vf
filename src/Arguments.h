@@ -45,9 +45,13 @@ public:
     Action action (void) const {
         return action_;
     }
+    float scale (void) const {
+        return scale_;
+    }
 private:
     Arguments (void);
     Action action_;
+    float scale_;
     std::vector<std::string> args;
 };
 
