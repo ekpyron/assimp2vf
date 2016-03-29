@@ -98,14 +98,21 @@ void Node::Load (const aiNode *node) {
         }
 
         std::sort (submesh_order.begin (), submesh_order.end (), [&] (unsigned int lhs, unsigned int rhs) {
-            aiString lhs_name;
-            aiString rhs_name;
-            scene->GetScene ()->mMaterials[scene->GetScene ()->mMeshes[lhs]->mMaterialIndex]->Get (AI_MATKEY_NAME, lhs_name);
-            scene->GetScene ()->mMaterials[scene->GetScene ()->mMeshes[rhs]->mMaterialIndex]->Get (AI_MATKEY_NAME, rhs_name);
-            for (auto i = 0; i < lhs_name.length; i++) {
-                if (rhs_name.length <= i) return true;
-                else if (std::toupper (lhs_name.data[i]) < std::toupper (rhs_name.data[i])) return true;
-                else if (std::toupper (lhs_name.data[i]) > std::toupper (rhs_name.data[i])) return false;
+            aiString _lhs_name;
+            aiString _rhs_name;
+            scene->GetScene ()->mMaterials[scene->GetScene ()->mMeshes[lhs]->mMaterialIndex]->Get (AI_MATKEY_NAME, _lhs_name);
+            scene->GetScene ()->mMaterials[scene->GetScene ()->mMeshes[rhs]->mMaterialIndex]->Get (AI_MATKEY_NAME, _rhs_name);
+            std::string lhs_name (_lhs_name.data, _lhs_name.length);
+            std::string rhs_name (_rhs_name.data, _rhs_name.length);
+            if (!lhs_name.compare (0, 9, "Material-"))
+                lhs_name.erase (0, 9);
+            if (!rhs_name.compare (0, 9, "Material-"))
+                rhs_name.erase (0, 9);
+
+            for (auto i = 0; i < lhs_name.length (); i++) {
+                if (rhs_name.length () <= i) return true;
+                else if (std::toupper (lhs_name[i]) < std::toupper (rhs_name[i])) return true;
+                else if (std::toupper (lhs_name[i]) > std::toupper (rhs_name[i])) return false;
             }
             return false;
         });
@@ -114,13 +121,12 @@ void Node::Load (const aiNode *node) {
         std::vector<Vertex> vertices;
         std::vector<float> bboxes;
 
-        materials.resize (node->mNumMeshes);
-
-        for (auto meshid = 0; meshid < node->mNumMeshes; meshid++) {
+        for (auto _meshid = 0; _meshid < node->mNumMeshes; _meshid++) {
+            unsigned int meshid = submesh_order[_meshid];
             std::vector<uint16_t> indices;
             std::vector<Seb::Point<double>> sebpoints;
             const aiMesh *mesh = scene->GetScene ()->mMeshes[node->mMeshes[meshid]];
-            materials[submesh_order[meshid]] = mesh->mMaterialIndex;
+            materials.push_back (mesh->mMaterialIndex);
             for (auto faceid = 0; faceid < mesh->mNumFaces; faceid++) {
                 const aiFace &face = mesh->mFaces[faceid];
                 if (face.mNumIndices != 3) {
