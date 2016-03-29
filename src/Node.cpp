@@ -92,6 +92,24 @@ void Node::Load (const aiNode *node) {
     }
 
     if (type == Mesh) {
+        std::vector<unsigned int> submesh_order;
+        for (auto meshid = 0; meshid < node->mNumMeshes; meshid++) {
+            submesh_order.push_back (meshid);
+        }
+
+        std::sort (submesh_order.begin (), submesh_order.end (), [&] (unsigned int lhs, unsigned int rhs) {
+            aiString lhs_name;
+            aiString rhs_name;
+            scene->GetScene ()->mMaterials[scene->GetScene ()->mMeshes[lhs]->mMaterialIndex]->Get (AI_MATKEY_NAME, lhs_name);
+            scene->GetScene ()->mMaterials[scene->GetScene ()->mMeshes[rhs]->mMaterialIndex]->Get (AI_MATKEY_NAME, rhs_name);
+            for (auto i = 0; i < lhs_name.length; i++) {
+                if (rhs_name.length <= i) return true;
+                else if (std::toupper (lhs_name.data[i]) < std::toupper (rhs_name.data[i])) return true;
+                else if (std::toupper (lhs_name.data[i]) > std::toupper (rhs_name.data[i])) return false;
+            }
+            return false;
+        });
+
         std::map<Vertex, unsigned int> vertexmap;
         std::vector<Vertex> vertices;
         std::vector<float> bboxes;
@@ -128,7 +146,7 @@ void Node::Load (const aiNode *node) {
 
             {
                 std::stringstream stream;
-                stream << "SUBMESH" << meshid;
+                stream << "SUBMESH" << submesh_order[meshid];
                 vfAddSet (vf, stream.str ().c_str (), 3, VF_UNSIGNED_SHORT, indices.size () / 3, indices.data (), 0);
 
                 Seb::Smallest_enclosing_ball<double> miniball (3, sebpoints);
