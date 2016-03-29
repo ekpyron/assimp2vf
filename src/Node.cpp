@@ -114,11 +114,13 @@ void Node::Load (const aiNode *node) {
         std::vector<Vertex> vertices;
         std::vector<float> bboxes;
 
+        materials.resize (node->mNumMeshes);
+
         for (auto meshid = 0; meshid < node->mNumMeshes; meshid++) {
             std::vector<uint16_t> indices;
             std::vector<Seb::Point<double>> sebpoints;
             const aiMesh *mesh = scene->GetScene ()->mMeshes[node->mMeshes[meshid]];
-            materials.push_back (mesh->mMaterialIndex);
+            materials[submesh_order[meshid]] = mesh->mMaterialIndex;
             for (auto faceid = 0; faceid < mesh->mNumFaces; faceid++) {
                 const aiFace &face = mesh->mFaces[faceid];
                 if (face.mNumIndices != 3) {
