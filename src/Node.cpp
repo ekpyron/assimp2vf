@@ -109,8 +109,6 @@ void Node::Load (const aiNode *node) {
             if (!rhs_name.compare (0, 9, "Material-"))
                 rhs_name.erase (0, 9);
 
-            std::cout << "COMPARE: " << lhs_name << " < " << rhs_name << std::endl;
-
             for (auto i = 0; i < lhs_name.length (); i++) {
                 if (rhs_name.length () <= i) return true;
                 else if (std::toupper (lhs_name[i]) < std::toupper (rhs_name[i])) return true;
@@ -129,11 +127,6 @@ void Node::Load (const aiNode *node) {
             std::vector<Seb::Point<double>> sebpoints;
             const aiMesh *mesh = scene->GetScene ()->mMeshes[node->mMeshes[meshid]];
             materials.push_back (mesh->mMaterialIndex);
-            {
-                aiString name;
-                scene->GetScene ()->mMaterials[mesh->mMaterialIndex]->Get (AI_MATKEY_NAME, name);
-                std::cout << _meshid << " -> " << meshid << ": MAT: " << name.C_Str () << std::endl;
-            }
             for (auto faceid = 0; faceid < mesh->mNumFaces; faceid++) {
                 const aiFace &face = mesh->mFaces[faceid];
                 if (face.mNumIndices != 3) {
