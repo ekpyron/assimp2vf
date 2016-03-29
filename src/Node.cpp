@@ -154,7 +154,7 @@ void Node::Load (const aiNode *node) {
 
             {
                 std::stringstream stream;
-                stream << "SUBMESH" << submesh_order[meshid];
+                stream << "SUBMESH" << meshid;
                 vfAddSet (vf, stream.str ().c_str (), 3, VF_UNSIGNED_SHORT, indices.size () / 3, indices.data (), 0);
 
                 Seb::Smallest_enclosing_ball<double> miniball (3, sebpoints);
