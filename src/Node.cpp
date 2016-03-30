@@ -121,13 +121,12 @@ void Node::Load (const aiNode *node) {
         std::vector<Vertex> vertices;
         std::vector<float> bboxes;
 
-        materials.resize (node->mNumMeshes);
-
-        for (auto meshid = 0; meshid < node->mNumMeshes; meshid++) {
+        for (auto _meshid = 0; _meshid < node->mNumMeshes; _meshid++) {
+            unsigned int meshid = submesh_order[_meshid];
             std::vector<uint16_t> indices;
             std::vector<Seb::Point<double>> sebpoints;
             const aiMesh *mesh = scene->GetScene ()->mMeshes[node->mMeshes[meshid]];
-            materials[submesh_order[meshid]] = mesh->mMaterialIndex;
+            materials.push_back (mesh->mMaterialIndex);
             for (auto faceid = 0; faceid < mesh->mNumFaces; faceid++) {
                 const aiFace &face = mesh->mFaces[faceid];
                 if (face.mNumIndices != 3) {
@@ -155,7 +154,7 @@ void Node::Load (const aiNode *node) {
 
             {
                 std::stringstream stream;
-                stream << "SUBMESH" << submesh_order[meshid];
+                stream << "SUBMESH" << _meshid;
                 vfAddSet (vf, stream.str ().c_str (), 3, VF_UNSIGNED_SHORT, indices.size () / 3, indices.data (), 0);
 
                 Seb::Smallest_enclosing_ball<double> miniball (3, sebpoints);
