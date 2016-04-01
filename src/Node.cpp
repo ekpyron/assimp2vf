@@ -33,15 +33,19 @@ Node::~Node (void) {
 }
 
 struct Vertex {
-    Vertex (const aiVector3D &position, const aiVector3D &normal, const aiVector3D &texcoord) {
+    Vertex (const aiVector3D &position, const aiVector3D &normal, const std::vector<aiVector3D> &texcoords) {
         x = position.x;
         y = position.y;
         z = position.z;
         nx = normal.x;
         ny = normal.y;
         nz = normal.z;
-        tx = texcoord.x;
-        ty = texcoord.y;
+        tx.reserve (texcoords.size ());
+        ty.reserve (texcoords.size ());
+        for (auto &texcoord : texcoords) {
+            tx.push_back (texcoord.x);
+            ty.push_back (texcoord.y);
+        }
     }
     bool operator< (const Vertex &rhs) const {
         if (x < rhs.x) return true;
@@ -56,9 +60,15 @@ struct Vertex {
         if (rhs.ny < ny) return false;
         if (nz < rhs.nz) return true;
         if (rhs.nz < nz) return false;
-        if (tx < rhs.tx) return true;
-        if (rhs.tx < tx) return false;
-        return ty < rhs.ty;
+        if (tx.size () < rhs.tx.size ()) return true;
+        if (rhs.tx.size () < tx.size ()) return false;
+        for (auto i = 0; i < tx.size (); i++) {
+            if (tx[i] < rhs.tx[i]) return true;
+            if (rhs.tx[i] < tx[i]) return false;
+            if (ty[i] < rhs.ty[i]) return true;
+            if (rhs.ty[i] < ty[i]) return false;
+        }
+        return false;
     }
     float x;
     float y;
@@ -66,8 +76,8 @@ struct Vertex {
     float nx;
     float ny;
     float nz;
-    float tx;
-    float ty;
+    std::vector<float> tx;
+    std::vector<float> ty;
 };
 
 void Node::Load (const aiNode *node) {
@@ -134,7 +144,11 @@ void Node::Load (const aiNode *node) {
                 }
                 for (auto i = 0; i < 3; i++) {
                     unsigned int index = face.mIndices[i];
-                    Vertex v (mesh->mVertices[index], mesh->mNormals[index], mesh->mTextureCoords[0][index]);
+                    std::vector<aiVector3D> texcoords;
+                    for (auto j = 0; j < mesh->GetNumUVChannels (); j++) {
+                        texcoords.push_back (mesh->mTextureCoords[j][index]);
+                    }
+                    Vertex v (mesh->mVertices[index], mesh->mNormals[index], texcoords);
 
                     const double coords[] = { v.x, v.y, v.z };
                     sebpoints.emplace_back (3, coords);
@@ -185,14 +199,17 @@ void Node::Load (const aiNode *node) {
             }
             vfAddSet (vf, "NORMALS", 3, VF_FLOAT, vertices.size (), normals.data (), 0);
         }
+        for (auto i = 0; i < vertices.front ().tx.size (); i++)
         {
             std::vector<float> texcoords;
             texcoords.resize (vertices.size () * 2);
-            for (auto i = 0; i < vertices.size (); i++) {
-                texcoords[i*2+0] = vertices[i].tx;
-                texcoords[i*2+1] = vertices[i].ty;
+            for (auto j = 0; j < vertices.size (); j++) {
+                texcoords[j*2+0] = vertices[j].tx[i];
+                texcoords[j*2+1] = vertices[j].ty[i];
             }
-            vfAddSet (vf, "TEXCOORDS0", 2, VF_FLOAT, vertices.size (), texcoords.data (), 0);
+            std::stringstream stream;
+            stream << "TEXCOORDS" << i;
+            vfAddSet (vf, stream.str ().c_str (), 2, VF_FLOAT, vertices.size (), texcoords.data (), 0);
         }
         vfAddSet (vf, "BSPHERES", 4, VF_FLOAT, bboxes.size () / 4, bboxes.data (), 0);
     } else if (type == SplineCurve || type == BezierCurve) {
