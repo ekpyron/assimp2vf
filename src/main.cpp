@@ -27,6 +27,11 @@
 int main (int argc, char *argv[]) {
     try {
         Assimp::Importer importer;
+#ifdef AI_CONFIG_IMPORT_COLLADA_USE_COLLADA_NAMES
+        importer.SetPropertyBool(AI_CONFIG_IMPORT_COLLADA_USE_COLLADA_NAMES, true);
+#else
+# warning "AI_CONFIG_IMPORT_COLLADA_USE_COLLADA_NAMES not supported by assimp! Falling back to using id tags as names instead."
+#endif
         Assimp::DefaultLogger::create ("", Assimp::Logger::VERBOSE);
 
         if (!arguments ().parse (argc, argv))
