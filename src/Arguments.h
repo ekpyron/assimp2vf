@@ -48,10 +48,14 @@ public:
     float scale (void) const {
         return scale_;
     }
+    bool flipUV (void) const {
+        return flipUV_;
+    }
 private:
     Arguments (void);
     Action action_;
     float scale_;
+    bool flipUV_;
     std::vector<std::string> args;
 };
 

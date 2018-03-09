@@ -38,8 +38,9 @@ int main (int argc, char *argv[]) {
             return EXIT_SUCCESS;
 
         const aiScene *aiscene = importer.ReadFile (arguments ().inputfile (), aiProcess_GenSmoothNormals|aiProcess_CalcTangentSpace
-                                                             |aiProcess_Triangulate|aiProcess_GenUVCoords|aiProcess_FlipUVs|aiProcess_OptimizeMeshes
-                                                             |aiProcess_SortByPType|aiProcess_FindDegenerates|aiProcess_ImproveCacheLocality);
+                                                             |aiProcess_Triangulate|aiProcess_GenUVCoords|aiProcess_OptimizeMeshes
+                                                             |aiProcess_SortByPType|aiProcess_FindDegenerates|aiProcess_ImproveCacheLocality
+                                                             |(arguments ().flipUV() ? aiProcess_FlipUVs : 0));
         if (!aiscene) {
             std::cerr << "Cannot load " << arguments ().inputfile () << ": " << importer.GetErrorString () << std::endl;
             return EXIT_FAILURE;

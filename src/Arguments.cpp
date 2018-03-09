@@ -20,7 +20,7 @@
 #include <iostream>
 #include "Arguments.h"
 
-Arguments::Arguments (void) : action_ (CONVERT), scale_ (1.0f) {
+Arguments::Arguments (void) : action_ (CONVERT), scale_ (1.0f), flipUV_ (true) {
 }
 
 Arguments::~Arguments (void) {
@@ -32,7 +32,8 @@ void Arguments::usage (const char *argv0) {
     << "  -m    outputs a list of materials used by the nodes" << std::endl
     << "  -n    outputs the node hierarchy" << std::endl
     << "  -a    outputs the animation data" << std::endl
-    << "  -s    scale factor" << std::endl;
+    << "  -s    scale factor" << std::endl
+    << "  -f    flip UVs" << std::endl;
 }
 
 bool Arguments::parse (int argc, char **argv) {
@@ -51,6 +52,9 @@ bool Arguments::parse (int argc, char **argv) {
                         break;
                     case 'a':
                         action_ = LIST_ANIMATIONDATA;
+                        break;
+                    case 'f':
+                        flipUV_ = false;
                         break;
                     case 's':
                     {
